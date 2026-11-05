@@ -16,6 +16,7 @@ import sys
 import json
 import ssl
 import socket
+import base64
 import hashlib
 import time
 import datetime
@@ -779,6 +780,35 @@ if not MM_WEB_TOKEN:
 MM_STATE_FILE = os.path.join(BASE_DIR, "mm_last_run.json")
 
 
+def _mm_token_uid(token=None):
+    """从网页 JWT 的载荷里取出 user.id。
+
+    接口要求查询参数 user_id 与 token 属主一致，否则一律 401。
+    上游源码把 user_id 写死成作者自己的值，换人用必然 401，
+    所以这里改为从 token 现场解析；解析不出来时告警并要求显式配置。
+    """
+    t = token or MM_WEB_TOKEN
+    try:
+        payload = t.split(".")[1]
+        payload += "=" * (-len(payload) % 4)
+        info = json.loads(base64.urlsafe_b64decode(payload))
+    except Exception:
+        return ""
+    user = info.get("user")
+    if isinstance(user, dict):
+        uid = user.get("id")
+        if uid:
+            return str(uid)
+    for k in ("user_id", "uid", "sub"):
+        if info.get(k):
+            return str(info[k])
+    return ""
+
+
+# 允许显式覆盖（多账号 / 排障时用环境变量）
+MM_WEB_UID = os.environ.get("MM_WEB_UID", "").strip() or _mm_token_uid()
+
+
 def _mm_sign_headers(now_s, body_str):
     """计算 MiniMax 网页端请求签名所需的 Header。"""
     sig = hashlib.md5(
@@ -792,6 +822,12 @@ def _mm_api(path, method="GET", body=None):
     if not MM_WEB_TOKEN:
         raise RuntimeError(
             "未配置 MiniMax Code 网页登录凭据（mm_web_token.json 或 MM_WEB_TOKEN）"
+        )
+    if not MM_WEB_UID:
+        raise RuntimeError(
+            "无法从 MiniMax token 中解析 user_id：接口要求 user_id 与 token 属主一致，"
+            "否则一律 401。请确认 mm_web_token.json 里放的是 agent.minimax.cn 网页端登录后的 "
+            "localStorage._token 原值；或用环境变量 MM_WEB_UID 显式指定。"
         )
     now_ms = int(time.time() * 1000)
     now_s = now_ms // 1000
@@ -812,7 +848,7 @@ def _mm_api(path, method="GET", body=None):
         "cpu_core_num": "20",
         "browser_language": "zh-CN",
         "browser_platform": "Win32",
-        "user_id": "555802743632904195",
+        "user_id": MM_WEB_UID,
         "screen_width": "1707",
         "screen_height": "1067",
         "token": MM_WEB_TOKEN,
