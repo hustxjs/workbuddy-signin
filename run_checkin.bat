@@ -1,5 +1,5 @@
 @echo off
-setlocal
+setlocal EnableDelayedExpansion
 set "SCRIPT=%~dp0workbuddy_checkin.py"
 set "LOG=%~dp0checkin.log"
 
@@ -51,7 +51,7 @@ set "SYNC=%~dp0wb_token_sync.py"
 if exist "%SYNC%" (
     echo [%TIME%] ----- token refresh ----->> "%LOG%"
     "%PYCS%" "%SYNC%" >> "%LOG%" 2>&1
-    echo [%TIME%] ----- token refresh done (exit=%errorlevel%) ----->> "%LOG%"
+    echo [%TIME%] ----- token refresh done, exit=!errorlevel! ----->> "%LOG%"
 )
 
 echo [%TIME%] ===== WorkBuddy checkin START =====>> "%LOG%"
