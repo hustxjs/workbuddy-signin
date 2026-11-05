@@ -4,13 +4,14 @@ REM Add WorkBuddy checkin web server to Windows startup (per-user, no admin need
 REM Creates a hidden launcher in the Startup folder; the server starts silently at logon.
 
 set "STARTUP=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup"
-REM Local build points at start_web_local.bat (port 8790). The upstream
-REM start_web.bat uses the default port 8765, which is already taken on
-REM this machine, so the autostart entry would fail to bind.
-if exist "%~dp0start_web_local.bat" (
-    set "TARGET=%~dp0start_web_local.bat"
-) else (
-    set "TARGET=%~dp0start_web.bat"
+REM Local build: only start_web_bg.bat ships here. It sets port 8790 and runs
+REM detached, so the hidden Startup launcher works and later closing a console
+REM window cannot kill the service.
+set "TARGET=%~dp0start_web_bg.bat"
+if not exist "%TARGET%" (
+    echo [ERROR] start_web_bg.bat not found next to this script.
+    pause
+    exit /b 1
 )
 set "VBS=%STARTUP%\WorkBuddyCheckinWeb.vbs"
 
@@ -25,5 +26,5 @@ echo To cancel: just delete that .vbs file.
 echo.
 echo Starting it right now (hidden)...
 start "" wscript.exe "%VBS%"
-echo Done. Open the page on your phone (see URL printed by start_web.bat).
+echo Done. Open http://127.0.0.1:8790 (see start_web_bg.bat for details).
 pause
