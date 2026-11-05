@@ -57,6 +57,7 @@ config-*.js
 vendor-*.js
 idx.js
 checkin.log
+web_server.log
 
 # Python 缓存
 __pycache__/

@@ -1,13 +1,21 @@
 @echo off
-REM 本机启动脚本（在 start_web.bat 基础上加了端口设置）
-REM 原因：本机 8765 端口被 WorkMami_0.1.1_win_x64.exe 占用，签到服务改用 8790
-REM 用法：双击本文件即可；停止按 Ctrl+C
+REM ============================================================
+REM Local foreground launcher (ASCII-only on purpose: cmd parses
+REM .bat files using the OEM codepage; UTF-8 Chinese comments
+REM corrupt the line structure and break the script).
+REM
+REM Port 8790 (8765 is already taken on this machine).
+REM Usage: double-click and KEEP THIS WINDOW OPEN.
+REM         This is the FOREGROUND variant - closing the window
+REM         kills the service. For a detached one use
+REM         start_web_bg.bat instead.
+REM ============================================================
 setlocal
 cd /d "%~dp0"
 set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
 
-REM --- 本机端口（8765 已被 WorkMami 占用）---
+REM --- Local port (8765 is taken by another program here) ---
 set "WB_PORT=8790"
 
 REM Pick an available Python interpreter (prefer WorkBuddy bundled, then system)
